@@ -15,8 +15,8 @@ func NewTaskService(repo *repository.TaskRepository) *TaskService {
 	return &TaskService{repo: repo}
 }
 
-func (s *TaskService) ListTasks(userId uuid.UUID) (*[]models.Task, error) {
-	return s.repo.List(userId)
+func (s *TaskService) ListTasks(userId uuid.UUID, filters models.TaskFilter) (*[]models.Task, error) {
+	return s.repo.List(userId, filters)
 }
 
 func (s *TaskService) CreateTask(

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"todo/internal/models"
 
 	"github.com/google/uuid"
@@ -15,9 +16,21 @@ func NewTaskRepository(db *sql.DB) *TaskRepository {
 	return &TaskRepository{db: db}
 }
 
-func (r *TaskRepository) List(userId uuid.UUID) (*[]models.Task, error) {
+func (r *TaskRepository) List(userId uuid.UUID, filters models.TaskFilter) (*[]models.Task, error) {
 	var tasks []models.Task
-	rows, err := r.db.Query("SELECT * FROM tasks WHERE user_id = $1", userId)
+
+	var query = "SELECT * FROM tasks WHERE user_id = $1"
+	var args []any = []any{userId}
+
+	var i = 2
+
+	if filters.Status != "" {
+		query += fmt.Sprintf(" AND status = $%d", i)
+		args = append(args, filters.Status)
+		i++
+	}
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}

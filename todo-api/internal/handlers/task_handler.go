@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"todo/internal/auth"
@@ -22,8 +21,14 @@ func NewTaskHandler(svc *services.TaskService) *TaskHandler {
 
 func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(auth.UserIdKey).(uuid.UUID)
-	log.Println(userId)
-	tasks, err := h.svc.ListTasks(userId)
+
+	status := r.URL.Query().Get("status")
+
+	filters := models.TaskFilter{
+		Status: status,
+	}
+
+	tasks, err := h.svc.ListTasks(userId, filters)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

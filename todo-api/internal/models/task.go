@@ -18,6 +18,10 @@ type Task struct {
 	Status      Status    `json:"status"`
 }
 
+type TaskFilter struct {
+	Status string
+}
+
 func IsValidStatus(status string) bool {
 	switch Status(status) {
 	case StatusNotStarted, StatusOngoing, StatusDone:
