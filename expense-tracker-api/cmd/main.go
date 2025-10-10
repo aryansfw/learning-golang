@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os/signal"
 	"spendime/internal/auth"
+	"spendime/internal/category"
 	"spendime/internal/config"
 	"spendime/internal/db"
 	"spendime/internal/middleware"
@@ -36,21 +37,38 @@ func main() {
 
 	authHandler := auth.NewHandler(auth.NewService(user.NewRepository(gormDb)), cfg)
 	transactionHandler := transaction.NewHandler(transaction.NewService(transaction.NewRepository(gormDb)))
+	categoryHandler := category.NewHandler(category.NewService(category.NewRepository(gormDb)))
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/login", authHandler.Login)
 	mux.HandleFunc("/register", authHandler.Register)
 
-	mux.Handle("/transactions", middleware.Auth(cfg.JWTSecret)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/transactions", middleware.Auth(cfg.JWTSecret, gormDb)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			transactionHandler.Create(w, r)
+		case http.MethodGet:
+			transactionHandler.List(w, r)
 		default:
 			response.Error(w, "Invalid method", http.StatusMethodNotAllowed, "invalid method")
 			return
 		}
 	})))
+
+	mux.Handle("/transactions/", middleware.Auth(cfg.JWTSecret, gormDb)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodDelete:
+			transactionHandler.Delete(w, r)
+		case http.MethodPatch:
+			transactionHandler.Update(w, r)
+		default:
+			response.Error(w, "Invalid method", http.StatusMethodNotAllowed, "invalid method")
+			return
+		}
+	})))
+
+	mux.HandleFunc("/categories", categoryHandler.List)
 
 	server := &http.Server{
 		Addr:         cfg.Addr(),
@@ -78,11 +96,12 @@ func main() {
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	if err := db.Close(gormDb); err != nil {
+		log.Fatalf("Error closing database connection: %v", err)
+	}
+
 	if err := server.Shutdown(timeoutCtx); err != nil {
 		log.Fatalf("Error shutting down server gracefully: %v", err)
 	}
 
-	if err := db.Close(gormDb); err != nil {
-		log.Fatalf("Error closing database connection: %v", err)
-	}
 }

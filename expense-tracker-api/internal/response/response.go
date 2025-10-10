@@ -8,8 +8,8 @@ import (
 type apiResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   interface{} `json:"error,omitempty"`
+	Data    any `json:"data,omitempty"`
+	Error   any `json:"error,omitempty"`
 }
 
 func sendJson(w http.ResponseWriter, status int, payload apiResponse) {
@@ -20,7 +20,7 @@ func sendJson(w http.ResponseWriter, status int, payload apiResponse) {
 	}
 }
 
-func Success(w http.ResponseWriter, message string, data interface{}) {
+func Success(w http.ResponseWriter, message string, data any) {
 	sendJson(w, http.StatusOK, apiResponse{
 		Success: true,
 		Message: message,
@@ -28,7 +28,7 @@ func Success(w http.ResponseWriter, message string, data interface{}) {
 	})
 }
 
-func Error(w http.ResponseWriter, message string, status int, err interface{}) {
+func Error(w http.ResponseWriter, message string, status int, err any) {
 	sendJson(w, status, apiResponse{
 		Success: false,
 		Message: message,

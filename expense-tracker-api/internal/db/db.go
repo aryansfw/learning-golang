@@ -1,6 +1,7 @@
 package db
 
 import (
+	"spendime/internal/category"
 	"spendime/internal/transaction"
 	"spendime/internal/user"
 
@@ -14,7 +15,7 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err := db.AutoMigrate(&user.User{}, &transaction.Transaction{}); err != nil {
+	if err := db.AutoMigrate(&user.User{}, &transaction.Transaction{}, &category.Category{}); err != nil {
 		return nil, err
 	}
 

@@ -1,6 +1,10 @@
 package transaction
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type Service struct {
 	repo *Repository
@@ -10,25 +14,40 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo}
 }
 
-func (s *Service) Create(name string, amount int64, transactionType Type) (*Transaction, error) {
-	transaction := Transaction{
-		Name:   name,
-		Amount: amount,
-		Type:   transactionType,
-	}
-	if err := s.repo.Create(&transaction); err != nil {
-		return nil, err
+func (s *Service) Create(ctx context.Context, transaction *Transaction) error {
+	if err := s.repo.Create(ctx, transaction); err != nil {
+		return err
 	}
 
-	return &transaction, nil
+	return nil
 }
 
-func (s *Service) List(userID uuid.UUID) (*[]Transaction, error) {
-	transactions, err := s.repo.List(userID)
+func (s *Service) List(ctx context.Context, filters TransactionFilters) (*[]Transaction, error) {
+	transactions, err := s.repo.List(ctx, filters)
 
 	if err != nil {
 		return nil, err
 	}
 
+	for idx := range *transactions {
+		(*transactions)[idx].CategoryID = nil
+	}
+
 	return transactions, nil
+}
+
+func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) Update(ctx context.Context, transaction *Transaction) error {
+	if err := s.repo.Update(ctx, transaction); err != nil {
+		return err
+	}
+
+	return nil
 }
