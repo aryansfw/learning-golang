@@ -28,9 +28,7 @@ func main() {
 	noteHandler := handler.NewNote(dbConn)
 	http.HandleFunc("POST /notes", noteHandler.Upload)
 	http.HandleFunc("GET /notes/{id}", noteHandler.Download)
-	// http.HandleFunc("POST /note/check", nil)
-
-	// http.HandleFunc("GET /note/html", nil)
+	http.HandleFunc("GET /notes/{id}/html", noteHandler.GetHTML)
 
 	srv := &http.Server{
 		Addr: ":8080",

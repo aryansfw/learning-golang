@@ -10,9 +10,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 type Note struct {
@@ -36,6 +41,13 @@ func (h *Note) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer uf.Close()
+
+	// Check file extension
+	ext := strings.ToLower(filepath.Ext(ufh.Filename))
+	if ext != ".md" {
+		response.Error(w, "File must be a markdown type (.md)", http.StatusBadRequest, err)
+		return
+	}
 
 	ID := uuid.New()
 
@@ -104,6 +116,44 @@ func (h *Note) Download(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", contentDisposition)
 
 	if _, err := io.Copy(w, f); err != nil {
+		response.Error(w, err.Error(), http.StatusInternalServerError, err)
+		return
+	}
+}
+
+func (h *Note) GetHTML(w http.ResponseWriter, r *http.Request) {
+	idString := r.PathValue("id")
+
+	path := filepath.Join(os.Getenv("STORAGE_PATH"), idString)
+
+	if _, err := os.Stat(path); err != nil && errors.Is(err, os.ErrNotExist) {
+		response.Error(w, "No file with given id found", http.StatusBadRequest, err)
+		return
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		response.Error(w, err.Error(), http.StatusInternalServerError, err)
+		return
+	}
+	defer f.Close()
+
+	doc, err := io.ReadAll(f)
+	if err != nil {
+		response.Error(w, err.Error(), http.StatusInternalServerError, err)
+		return
+	}
+
+	// create markdown parser
+	p := parser.NewWithExtensions(parser.CommonExtensions)
+	// create HTML renderer
+	renderer := html.NewRenderer(html.RendererOptions{Flags: html.CommonFlags})
+
+	maybeUnsafeHTML := markdown.ToHTML(doc, p, renderer)
+	html := bluemonday.UGCPolicy().SanitizeBytes(maybeUnsafeHTML)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if _, err := fmt.Fprint(w, string(html)); err != nil {
 		response.Error(w, err.Error(), http.StatusInternalServerError, err)
 		return
 	}
