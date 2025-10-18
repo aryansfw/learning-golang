@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS links (
+  id        SERIAL PRIMARY KEY,
+  short_url VARCHAR(32) UNIQUE NOT NULL,
+  long_url  VARCHAR(32) NOT NULL
+);
