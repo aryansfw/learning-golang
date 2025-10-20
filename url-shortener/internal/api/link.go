@@ -28,7 +28,7 @@ func (a *api) redirectLinkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, link.LongURL, http.StatusOK)
+	http.Redirect(w, r, link.LongURL, http.StatusFound)
 }
 
 func (a *api) createLinkHandler(w http.ResponseWriter, r *http.Request) {
