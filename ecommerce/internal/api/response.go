@@ -5,8 +5,17 @@ import (
 	"net/http"
 )
 
+type response struct {
+	Success bool `json:"success"`
+	Data    any  `json:"data,omitempty"`
+	Error   any  `json:"error,omitempty"`
+}
+
 func (a *api) successResponse(w http.ResponseWriter, payload any) {
-	res := map[string]any{"success": true, "data": payload}
+	res := response{
+		Success: true,
+		Data:    payload,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -14,7 +23,10 @@ func (a *api) successResponse(w http.ResponseWriter, payload any) {
 }
 
 func (a *api) errorResponse(w http.ResponseWriter, status int, err any) {
-	res := map[string]any{"success": false, "error": err}
+	res := response{
+		Success: false,
+		Error:   err,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

@@ -30,15 +30,15 @@ func (p *pgUserRepository) GetByID(ctx context.Context, id int64) (domain.User, 
 	return user, nil
 }
 
-func (p *pgUserRepository) GetPasswordByEmail(ctx context.Context, email string) (domain.User, error) {
+func (p *pgUserRepository) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	query := `
-		SELECT password
+		SELECT id, name, email, password
 		FROM users
 		WHERE email = $1`
 
 	var user domain.User
 
-	if err := p.conn.QueryRow(ctx, query, email).Scan(&user.Password); err != nil {
+	if err := p.conn.QueryRow(ctx, query, email).Scan(&user.ID, &user.Name, &user.Email, &user.Password); err != nil {
 		return domain.User{}, err
 	}
 
